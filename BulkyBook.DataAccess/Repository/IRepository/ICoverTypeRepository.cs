@@ -7,6 +7,6 @@ namespace BulkyBook.DataAccess.Repository.IRepository
 {
     public interface ICoverTypeRepository : IRepository<CoverType>
     {
-        void Upadet(CoverType coverType);
+        void Update(CoverType coverType);
     }
 }
