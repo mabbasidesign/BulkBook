@@ -35,12 +35,12 @@ namespace BulkyBook.DataAccess.Repository
         {
             IQueryable<T> query = dbSet;
 
-            if(filter != null)
+            if (filter != null)
             {
                 query = query.Where(filter);
             }
 
-            if(includeProperties != null)
+            if (includeProperties != null)
             {
                 foreach (var includeProp in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 {
@@ -72,7 +72,7 @@ namespace BulkyBook.DataAccess.Repository
                 }
             }
 
-            
+
             return query.FirstOrDefault();
         }
 
