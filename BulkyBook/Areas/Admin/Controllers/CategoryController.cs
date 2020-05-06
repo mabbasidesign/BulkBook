@@ -25,6 +25,18 @@ namespace BulkyBook.Areas.Admin.Controllers
                 Categories = await _unitOfWork.Category.GetAllAsync()
             };
 
+            var count = categoryVM.Categories.Count();
+            categoryVM.Categories = categoryVM.Categories.OrderBy(c => c.Name)
+                .Skip((productPage - 1) * 2).Take(2).ToList();
+
+            categoryVM.PagingInfo = new PagingInfo
+            {
+                CurrentPage = productPage,
+                ItemsPerPage = 2,
+                TotalItem = count,
+                urlParam = "/Admin/Category/Index?productPage=:"
+            };
+
             return View(categoryVM);
         }
 
