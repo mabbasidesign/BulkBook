@@ -1,8 +1,69 @@
-﻿
+﻿@model BulkyBook.Models.ViewModels.CategoryVM
 @{
-    ViewData["Title"] = "Upsert";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <h1>Index</h1>
 
+<br />
+<div class="row">
+    <div class="col-6">
+        <h2 class="text-primary">Category List</h2>
+    </div>
+    <div class="col-6 text-right">
+        <a class="btn btn-primary" asp-action="Upsert"><i class="fa fa-plus"></i >&nbsp; Create New Category</a>
+    </div>
+</div>
+
+<br />
+
+<div class="p-4 border rounded">
+    @if(Model.Categories.Count() > 0)
+    {
+        <table class="table table-striped border">
+            <tr class="table-secondary">
+                <th>
+                    Category Name
+                </th>
+                <th></th>
+            </tr>
+           @foreach(var item in Model.Categories)
+           {
+               <tr>
+                   <td>@Html.DisplayFor(c => item.Name)</td>
+                   <td class="text-center">
+                       <a href="/Admin/Category/Upsert/@item.Id" class="btn btn-success"
+                          style="cursor:pointer">
+                           <i class="fas fa-edit"></i>
+                       </a>
+                       &nbsp;
+                       <button onclick=Delete("/Admin/Category/Delete/@item.Id")
+                               class="btn btn-danger" style="cursor:pointer">
+                           <i class="fas fa-trash-alt"></i>
+                       </button>
+                   </td>
+               </tr>
+           }
+        </table>
+    }
+    else
+    {
+       <p>No Categories Exists.</p>
+    }
+</div>
+
+@section Scripts{
+
+<script>
+    function Delete(url) {
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            success: function (data) {
+                location.reload();
+            }
+        });
+    }
+</script>
+
+}

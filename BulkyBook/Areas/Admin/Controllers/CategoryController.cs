@@ -66,5 +66,28 @@ namespace BulkyBook.Areas.Admin.Controllers
             return View(category);
         }
 
+        //#region API CALLS
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var categories = await _unitOfWork.Category.GetAllAsync();
+            return Json(new { data = categories });
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var category = await _unitOfWork.Category.GetAsync(id);
+            if(category == null)
+            {
+                return Json(new { success = false, message = "Error While Deliting" });
+            }
+
+            await _unitOfWork.Category.RemoveAsync(category);
+            _unitOfWork.Save();
+            return Json(new { success = false, message = "Delete Successful" });
+        }
+
     }
 }
