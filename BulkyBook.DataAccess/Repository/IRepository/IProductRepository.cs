@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BulkyBook.DataAccess.Repository.IRepository
 {
-    public interface IProductRepository : IRepository<Product>
+    public interface IProductRepository : IRepositoryAsync<Product>
     {
         void Update(Product product);
     }

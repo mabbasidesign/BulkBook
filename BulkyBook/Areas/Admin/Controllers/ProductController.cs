@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BulkyBook.Areas.Admin.Controllers
 {
@@ -13,90 +15,91 @@ namespace BulkyBook.Areas.Admin.Controllers
     public class ProductController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
-        public ProductController(IUnitOfWork unitOfWork)
+        private readonly IWebHostEnvironment _hostEnvironment;
+
+        public ProductController(IUnitOfWork unitOfWork, IWebHostEnvironment hostEnvironment)
         {
             _unitOfWork = unitOfWork;
+            _hostEnvironment = hostEnvironment;
         }
 
-        public async Task<IActionResult> Index(int productPage =1)
+        public IActionResult Index()
         {
-            CategoryVM categoryVM = new CategoryVM()
-            {
-                Categories = await _unitOfWork.Category.GetAllAsync()
-            };
-
-            var count = categoryVM.Categories.Count();
-            categoryVM.Categories = categoryVM.Categories.OrderBy(c => c.Name)
-                .Skip((productPage - 1) * 2).Take(2).ToList();
-
-            categoryVM.PagingInfo = new PagingInfo
-            {
-                CurrentPage = productPage,
-                ItemsPerPage = 2,
-                TotalItem = count,
-                urlParam = "/Admin/Category/Index?productPage=:"
-            };
-
-            return View(categoryVM);
+            return View();
         }
 
         public async Task<IActionResult> Upsert(int? id)
         {
-            Category category = new Category();
+            IEnumerable<Category> CatList = await _unitOfWork.Category.GetAllAsync();
+            ProductVM productVM = new ProductVM()
+            {
+                Product = new Product(),
+                CategoryList = CatList.Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Id.ToString()
+                }),
+                CoverTypeList = _unitOfWork.CoverType.GetAll().Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Id.ToString()
+                })
+            };
 
             if(id == null)
             {
-                return View(category);
+                return View(productVM);
             }
-            category = await _unitOfWork.Category.GetAsync(id.GetValueOrDefault());
-            if (category == null)
+
+            productVM.Product = await _unitOfWork.Product.GetAsync(id.GetValueOrDefault());
+            if(productVM.Product == null)
             {
                 return NotFound();
             }
 
-            return View(category);
+            return View(productVM);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upsert(Category category)
-        {
-            if (ModelState.IsValid)
-            {
-                if(category.Id == 0)
-                {
-                    await _unitOfWork.Category.AddAsync(category);
-                }
-                else
-                {
-                    _unitOfWork.Category.Update(category);
-                }
-                _unitOfWork.Save();
-                return RedirectToAction(nameof(Index));
-            }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Upsert(Product Product)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        if(Product.Id == 0)
+        //        {
+        //            await _unitOfWork.Product.AddAsync(Product);
+        //        }
+        //        else
+        //        {
+        //            _unitOfWork.Product.Update(Product);
+        //        }
+        //        _unitOfWork.Save();
+        //        return RedirectToAction(nameof(Index));
+        //    }
 
-            return View(category);
-        }
+        //    return View(Product);
+        //}
 
         //#region API CALLS
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var categories = await _unitOfWork.Category.GetAllAsync();
-            return Json(new { data = categories });
+            var products = await _unitOfWork.Product.GetAllAsync(includeProperties: "Category,CoverType");
+            return Json(new { data = products });
         }
 
         [HttpDelete]
         public async Task<IActionResult> Delete(int id)
         {
-            var category = await _unitOfWork.Category.GetAsync(id);
-            if(category == null)
+            var Product = await _unitOfWork.Product.GetAsync(id);
+            if(Product == null)
             {
                 return Json(new { success = false, message = "Error While Deliting" });
             }
 
-            await _unitOfWork.Category.RemoveAsync(category);
+            await _unitOfWork.Product.RemoveAsync(Product);
             _unitOfWork.Save();
             return Json(new { success = false, message = "Delete Successful" });
         }
