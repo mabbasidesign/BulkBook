@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using BulkyBook.DataAccess.Repository.IRepository;
@@ -60,26 +61,80 @@ namespace BulkyBook.Areas.Admin.Controllers
             return View(productVM);
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Upsert(Product Product)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        if(Product.Id == 0)
-        //        {
-        //            await _unitOfWork.Product.AddAsync(Product);
-        //        }
-        //        else
-        //        {
-        //            _unitOfWork.Product.Update(Product);
-        //        }
-        //        _unitOfWork.Save();
-        //        return RedirectToAction(nameof(Index));
-        //    }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Upsert(ProductVM productVM)
+        {
+            if (ModelState.IsValid)
+            {
+                string webRootPath = _hostEnvironment.WebRootPath;
+                var files = HttpContext.Request.Form.Files;
+                if(files.Count() > 0)
+                {
+                    string fileName = Guid.NewGuid().ToString();
+                    var uploads = Path.Combine(webRootPath, @"images\products");
+                    var extenstion = Path.GetExtension(files[0].FileName);
+                
+                    if (productVM.Product.ImageUrl != null)
+                    {
+                        //this is an edit and we need to remove old image
+                        var imagePath = Path.Combine(webRootPath, productVM.Product.ImageUrl.TrimStart('\\'));
+                        if (System.IO.File.Exists(imagePath))
+                        {
+                            System.IO.File.Delete(imagePath);
+                        }
+                    }
+                    using (var filesStreams = new FileStream(Path.Combine(uploads, fileName + extenstion), FileMode.Create))
+                    {
+                        files[0].CopyTo(filesStreams);
+                    }
+                    productVM.Product.ImageUrl = @"\images\products\" + fileName + extenstion;
+                }
+                else
+                {
+                    //update when they do not change the image
+                    if (productVM.Product.Id != 0)
+                    {
+                        Product objFromDb = await _unitOfWork.Product.GetAsync(productVM.Product.Id);
+                        productVM.Product.ImageUrl = objFromDb.ImageUrl;
+                    }
+                }
 
-        //    return View(Product);
-        //}
+
+                if (productVM.Product.Id == 0)
+                {
+                    await _unitOfWork.Product.AddAsync(productVM.Product);
+                }
+
+                else
+                {
+                    _unitOfWork.Product.Update(productVM.Product);
+                }
+                _unitOfWork.Save();
+                return RedirectToAction(nameof(Index));
+            }
+
+            else
+            {
+                IEnumerable<Category> CatList = await _unitOfWork.Category.GetAllAsync();
+                productVM.CategoryList = CatList.Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Id.ToString()
+                });
+                productVM.CoverTypeList = _unitOfWork.CoverType.GetAll().Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Id.ToString()
+                });
+                if (productVM.Product.Id != 0)
+                {
+                    productVM.Product = await _unitOfWork.Product.GetAsync(productVM.Product.Id);
+                }
+            }
+
+            return View(productVM);
+        }
 
         //#region API CALLS
 
@@ -93,13 +148,20 @@ namespace BulkyBook.Areas.Admin.Controllers
         [HttpDelete]
         public async Task<IActionResult> Delete(int id)
         {
-            var Product = await _unitOfWork.Product.GetAsync(id);
-            if(Product == null)
+            var product = await _unitOfWork.Product.GetAsync(id);
+            if(product == null)
             {
                 return Json(new { success = false, message = "Error While Deliting" });
             }
 
-            await _unitOfWork.Product.RemoveAsync(Product);
+            string webRootPath = _hostEnvironment.WebRootPath;
+            var imagePath = Path.Combine(webRootPath, product.ImageUrl.TrimStart('\\'));
+            if (System.IO.File.Exists(imagePath))
+            {
+                System.IO.File.Delete(imagePath);
+            }
+
+            await _unitOfWork.Product.RemoveAsync(product);
             _unitOfWork.Save();
             return Json(new { success = false, message = "Delete Successful" });
         }
