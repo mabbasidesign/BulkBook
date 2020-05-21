@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
 using BulkyBook.DataAccess.Repository.IRepository;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BulkyBook.Areas.Customer.Controllers
 {
@@ -23,12 +24,25 @@ namespace BulkyBook.Areas.Customer.Controllers
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var productList = await _unitOfWork.Product.GetAllAsync(includeProperties: "Category,CoverType");
+            var productList = _unitOfWork.Product.GetAll(includeProperties: "Category,CoverType");
             //IEnumerable<Product> productList = await _unitOfWork.Product.GetAllAsync(includeProperties: "Category,CoverType");
 
             return View(productList);
+        }
+
+        public IActionResult Details(int id)
+        {
+            var productFromDB = _unitOfWork.Product.GetFirstOrDefault(p => p.Id == id, includeProperties: "Category,CoverType");
+
+            ShoppingCart shoppingCat = new ShoppingCart()
+            {
+                Product = productFromDB,
+                ProductId = productFromDB.Id
+            };
+
+            return View(shoppingCat);
         }
 
         public IActionResult Privacy()

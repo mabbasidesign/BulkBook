@@ -52,7 +52,7 @@ namespace BulkyBook.Areas.Admin.Controllers
                 return View(productVM);
             }
 
-            productVM.Product = await _unitOfWork.Product.GetAsync(id.GetValueOrDefault());
+            productVM.Product = _unitOfWork.Product.Get(id.GetValueOrDefault());
             if(productVM.Product == null)
             {
                 return NotFound();
@@ -95,7 +95,7 @@ namespace BulkyBook.Areas.Admin.Controllers
                     //update when they do not change the image
                     if (productVM.Product.Id != 0)
                     {
-                        Product objFromDb = await _unitOfWork.Product.GetAsync(productVM.Product.Id);
+                        Product objFromDb = _unitOfWork.Product.Get(productVM.Product.Id);
                         productVM.Product.ImageUrl = objFromDb.ImageUrl;
                     }
                 }
@@ -103,7 +103,7 @@ namespace BulkyBook.Areas.Admin.Controllers
 
                 if (productVM.Product.Id == 0)
                 {
-                    await _unitOfWork.Product.AddAsync(productVM.Product);
+                    _unitOfWork.Product.Add(productVM.Product);
                 }
 
                 else
@@ -129,7 +129,7 @@ namespace BulkyBook.Areas.Admin.Controllers
                 });
                 if (productVM.Product.Id != 0)
                 {
-                    productVM.Product = await _unitOfWork.Product.GetAsync(productVM.Product.Id);
+                    productVM.Product = _unitOfWork.Product.Get(productVM.Product.Id);
                 }
             }
 
@@ -139,16 +139,16 @@ namespace BulkyBook.Areas.Admin.Controllers
         //#region API CALLS
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public IActionResult GetAll()
         {
-            var products = await _unitOfWork.Product.GetAllAsync(includeProperties: "Category,CoverType");
+            var products = _unitOfWork.Product.GetAll(includeProperties: "Category,CoverType");
             return Json(new { data = products });
         }
 
         [HttpDelete]
-        public async Task<IActionResult> Delete(int id)
+        public IActionResult Delete(int id)
         {
-            var product = await _unitOfWork.Product.GetAsync(id);
+            var product = _unitOfWork.Product.Get(id);
             if(product == null)
             {
                 return Json(new { success = false, message = "Error While Deliting" });
@@ -161,7 +161,7 @@ namespace BulkyBook.Areas.Admin.Controllers
                 System.IO.File.Delete(imagePath);
             }
 
-            await _unitOfWork.Product.RemoveAsync(product);
+            _unitOfWork.Product.Remove(product);
             _unitOfWork.Save();
             return Json(new { success = false, message = "Delete Successful" });
         }
