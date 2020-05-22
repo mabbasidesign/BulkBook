@@ -33,6 +33,19 @@ namespace BulkyBook.Areas.Customer.Controllers
             var productList = _unitOfWork.Product.GetAll(includeProperties: "Category,CoverType");
             //IEnumerable<Product> productList = await _unitOfWork.Product.GetAllAsync(includeProperties: "Category,CoverType");
 
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+
+            if(claim != null)
+            {
+                var count = _unitOfWork.ShoppingCart
+                    .GetAll(c => c.ApplicationUserId == claim.Value)
+                    .ToList().Count();
+
+                //HttpContext.Session.SetObject(SD.ssShoppingCart, CartObject);
+                HttpContext.Session.SetInt32(SD.ssShoppingCart, count);
+            }
+
             return View(productList);
         }
 
