@@ -11,6 +11,8 @@ using BulkyBook.DataAccess.Repository.IRepository;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using BulkyBook.Utility;
 
 namespace BulkyBook.Areas.Customer.Controllers
 {
@@ -56,15 +58,6 @@ namespace BulkyBook.Areas.Customer.Controllers
 
             if (ModelState.IsValid)
             {
-                //var claimsIdentity = (ClaimsIdentity)User.Identity;
-                //var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
-                //CartObject.ApplicationUserId = claim.Value;
-
-                //ShoppingCart cartFromDb = _unitOfWork.ShoppingCart.GetFirstOrDefault(
-                //    u => u.ApplicationUserId == CartObject.ApplicationUserId && u.ProductId == CartObject.ProductId
-                //    , includeProperties: "Product"
-                //    );
-
                 var claimsIdentity = (ClaimsIdentity)User.Identity;
                 var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
                 CartObject.ApplicationUserId = claim.Value;
@@ -86,6 +79,12 @@ namespace BulkyBook.Areas.Customer.Controllers
                 }
                 _unitOfWork.Save();
 
+                var count = _unitOfWork.ShoppingCart
+                    .GetAll(c => c.ApplicationUserId == CartObject.ApplicationUserId)
+                    .ToList().Count();
+
+                //HttpContext.Session.SetObject(SD.ssShoppingCart, CartObject);
+                HttpContext.Session.SetInt32(SD.ssShoppingCart, count);
 
                 return RedirectToAction(nameof(Index));
             }
@@ -103,54 +102,7 @@ namespace BulkyBook.Areas.Customer.Controllers
                 return View(shoppingCat);
             }
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //[Authorize]
-        //public IActionResult Details(ShoppingCart CartObject)
-        //{
-        //    CartObject.Id = 0;
-        //    if (ModelState.IsValid)
-        //    {
-        //        //then we will add to cart
-        //        var claimsIdentity = (ClaimsIdentity)User.Identity;
-        //        var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
-        //        CartObject.ApplicationUserId = claim.Value;
-
-        //        ShoppingCart cartFromDb = _unitOfWork.ShoppingCart.GetFirstOrDefault(
-        //            u => u.ApplicationUserId == CartObject.ApplicationUserId && u.ProductId == CartObject.ProductId
-        //            , includeProperties: "Product"
-        //            );
-
-        //        if (cartFromDb == null)
-        //        {
-        //            //no records exists in database for that product for that user
-        //            _unitOfWork.ShoppingCart.Add(CartObject);
-        //        }
-        //        else
-        //        {
-        //            cartFromDb.Count += CartObject.Count;
-        //            //_unitOfWork.ShoppingCart.Update(cartFromDb);
-        //        }
-        //        _unitOfWork.Save();
-
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    else
-        //    {
-        //        var productFromDb = _unitOfWork.Product.
-        //                GetFirstOrDefault(u => u.Id == CartObject.ProductId, includeProperties: "Category,CoverType");
-        //        ShoppingCart cartObj = new ShoppingCart()
-        //        {
-        //            Product = productFromDb,
-        //            ProductId = productFromDb.Id
-        //        };
-        //        return View(cartObj);
-        //    }
-
-
-        //}
-
+    
         public IActionResult Privacy()
         {
             return View();
