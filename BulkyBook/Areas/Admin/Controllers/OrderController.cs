@@ -29,6 +29,17 @@ namespace BulkyBook.Areas.Admin.Controllers
             return View();
         }
 
+        public IActionResult Details(int id)
+        {
+            OrderVM = new OrderDetailsVM()
+            {
+                OrderHeader = _unitOfWork.OrderHeader.GetFirstOrDefault(u => u.Id == id,
+                                                includeProperties: "ApplicationUser"),
+                OrderDetails = _unitOfWork.OrderDetails.GetAll(o => o.OrderId == id, includeProperties: "Product")
+
+            };
+            return View(OrderVM);
+        }
 
 
         #region API CALLS
